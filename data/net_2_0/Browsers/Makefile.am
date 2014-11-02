@@ -1,4 +1,4 @@
-monodir = $(sysconfdir)/mono/2.0/Browsers
+monodir = $(datadir)/examples/mono/2.0/Browsers
 
 EXTRA_DIST =  ../../Browsers/Compat.browser
 
