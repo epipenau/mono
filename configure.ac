@@ -106,7 +106,7 @@ case "$host" in
 		mono_cv_clang=no
 		if test "x$cross_compiling" = "xno"; then
 			target_win32=yes
-			if test "x$host" == "x$build" -a "x$host" == "x$target"; then
+			if test "x$host" = "x$build" -a "x$host" = "x$target"; then
 				AC_DEFINE(TARGET_WIN32,1,[Target OS is Win32])
 			fi
 		else
@@ -120,7 +120,7 @@ case "$host" in
 		LDFLAGS="$LDFLAGS -lmswsock -lws2_32 -lole32 -loleaut32 -lpsapi -lversion -ladvapi32 -lwinmm -lkernel32 -liphlpapi"
 		libmono_cflags="-mms-bitfields -mwindows"
 		libmono_ldflags="-mms-bitfields -mwindows"
-		libdl=
+		libdl=	
 		libgc_threads=win32
 		libgc_default=included
 		with_sigaltstack=no
@@ -137,10 +137,13 @@ case "$host" in
 		CPPFLAGS="$CPPFLAGS -DPLATFORM_BSD"
 		libmono_ldflags="-pthread"
 		need_link_unlink=yes
-		libdl="-ldl"
+		libdl="-ldl /libexec/ld.elf_so"
 		libgc_threads=pthreads
 		with_sigaltstack=no
 		use_sigposix=yes
+		cat >>confdefs.h <<\_ACEOF
+		#define PTHREAD_POINTER_ID 1
+		_ACEOF
 		;;
 	*-*-kfreebsd*-gnu)
 		host_win32=no
@@ -153,7 +156,7 @@ case "$host" in
 		with_sigaltstack=no
 		use_sigposix=yes
 		;;
-	*-*-*freebsd*)
+	*-*-*freebsd* | *-*-*dragonfly*)
 		host_win32=no
 		if test "x$PTHREAD_CFLAGS" = "x"; then
 			CPPFLAGS="$CPPFLAGS -DGC_FREEBSD_THREADS"
@@ -169,7 +172,7 @@ case "$host" in
 			LDFLAGS="$LDFLAGS $PTHREAD_LIBS -L/usr/local/lib"
 			libmono_ldflags="$PTHREAD_LIBS"
 		fi
-		CPPFLAGS="$CPPFLAGS -DPLATFORM_BSD"
+		CPPFLAGS="$CPPFLAGS -DPLATFORM_BSD -DPLATFORM_BSD6 -D_GNU_SOURCE -D_REENTRANT -DUSE_MMAP -DUSE_MUNMAP"
 		need_link_unlink=yes
 		AC_DEFINE(PTHREAD_POINTER_ID, 1, [pthread is a pointer])
 		libdl=
@@ -1549,6 +1552,7 @@ if test x$target_win32 = xno; then
 			if test -f /usr/lib/libxnet.so; then
 				CPPFLAGS="$CPPFLAGS -D_XOPEN_SOURCE=500"
 	    			CPPFLAGS="$CPPFLAGS -D__EXTENSIONS__"
+	    			CPPFLAGS="$CPPFLAGS -D__C99FEATURES__"
 				CPPFLAGS="$CPPFLAGS -D_XOPEN_SOURCE_EXTENDED=1"
            			LIBS="$LIBS -lxnet"
   	    			AC_MSG_RESULT(yes)
@@ -2464,7 +2468,7 @@ if test "x$enable_llvm" = "xyes"; then
    AC_MSG_CHECKING(LLVM version)
    AC_MSG_RESULT($llvm_version)
    if echo $llvm_version | grep -q 'mono'; then
-	  if test "x$enable_llvm_version_check" == "xyes"; then
+	  if test "x$enable_llvm_version_check" = "xyes"; then
 	  	 if test "$llvm_version" != "$expected_llvm_version"; then
 	  	 	AC_MSG_ERROR([Expected llvm version $expected_llvm_version, but llvm-config --version returned $llvm_version"])
 	  	 fi
@@ -2502,7 +2506,7 @@ LIBC="libc.so.6"
 INTL="libc.so.6"
 SQLITE="libsqlite.so.0"
 SQLITE3="libsqlite3.so.0"
-X11="libX11.so"
+X11="@X11BASE@/lib/libX11.so"
 GDKX11="libgdk-x11-2.0.so.0"
 GTKX11="libgtk-x11-2.0.so.0"
 XINERAMA="libXinerama.so.1"
@@ -2668,12 +2672,16 @@ case "$host" in
 		CPPFLAGS="$CPPFLAGS -D__ARM_EABI__"
 		sgen_supported=true
 		;;
-	arm*-linux*)
+	arm*-linux* | arm*-netbsd* | earm*-netbsd*)
 		TARGET=ARM;
 		arch_target=arm;
 		ACCESS_UNALIGNED="no"
-		sgen_supported=true
-		AOT_SUPPORTED="yes"
+		case $host_os in
+                 linux*)
+                       sgen_supported=true
+                       AOT_SUPPORTED="yes"
+                       ;;
+               esac
 		CPPFLAGS="$CPPFLAGS -D__ARM_EABI__"
 		;;
 # TODO: make proper support for NaCl host.
@@ -2940,15 +2948,18 @@ case "$host" in
 	GTKX11="libgtk-x11-2.0.dylib"
 	;;
      *-*-*netbsd*)
-	LIBC="libc.so.12"
-	INTL="libintl.so.0"
+       LIBC="libc.so"
+       INTL="libintl.so"
+       SQLITE="libsqlite.so"
+       SQLITE3="libsqlite3.so"
+
 	;;
      *-*-kfreebsd*-gnu)
 	LIBC="libc.so.0.1"
 	INTL="libc.so.0.1"
 	X11="libX11.so.6"
 	;;
-    *-*-*freebsd*)
+    *-*-*freebsd* | *-*-*dragonfly*)
     	LIBC="libc.so"
 	INTL="libintl.so"
 	SQLITE="libsqlite.so"
@@ -3360,8 +3371,6 @@ else
   mono_cfg_dir=$mono_cfg_root/etc
 fi
 AC_SUBST(mono_cfg_dir)
-
-AC_CONFIG_FILES([po/mcs/Makefile.in])
 
 AC_CONFIG_FILES([runtime/mono-wrapper],[chmod +x runtime/mono-wrapper])
 AC_CONFIG_FILES([runtime/monodis-wrapper],[chmod +x runtime/monodis-wrapper])
