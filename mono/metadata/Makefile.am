@@ -81,6 +81,8 @@ assembly.lo mono-config.lo: Makefile
 
 CLEANFILES = mono-bundle.stamp
 
+libmonoruntime_la_LIBADD = $(ICU_LIBS)
+
 libmonoruntime_static_la_LIBADD = $(bundle_obj) $(libmonoruntime_la_LIBADD)
 
 null_sources = \
