@@ -125,8 +125,9 @@ case "$THREADS" in
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	AC_DEFINE(USE_COMPILER_TLS)
 	;;
-      *-*-freebsd*)
+      *-*-freebsd* | *-*-*dragonfly*)
 	AC_DEFINE(GC_FREEBSD_THREADS)
+	AC_DEFINE(_REENTRANT)
 	if test "x$PTHREAD_CFLAGS" != "x"; then
 		AM_CPPFLAGS="$AM_CPPFLAGS $PTHREAD_CFLAGS"
 	fi
