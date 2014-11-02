@@ -58,7 +58,11 @@ void _wapi_collection_init (void)
 
 #if defined(HAVE_PTHREAD_ATTR_SETSTACKSIZE)
         if (set_stacksize == 0) {
+        	#ifdef PTHREAD_STACK_MIN
 			ret = pthread_attr_setstacksize (&attr, MAX (65536, PTHREAD_STACK_MIN));
+		#else
+                       ret = pthread_attr_setstacksize (&attr, 65536);
+		#endif
 			g_assert (ret == 0);
         } else if (set_stacksize == 1) {
 			ret = pthread_attr_setstacksize (&attr, 131072);
